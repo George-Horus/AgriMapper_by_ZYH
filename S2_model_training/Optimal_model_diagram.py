@@ -51,7 +51,7 @@ def load_model_from_path(model_path, model_type):
     """
     if model_path.endswith(".pt"):
         # Load PyTorch model using torch.load
-        model = torch.load(model_path)
+        model = torch.load(model_path,weights_only=False)
         model.eval()
         return model
     elif model_path.endswith(".joblib"):

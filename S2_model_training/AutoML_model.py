@@ -231,9 +231,6 @@ def AutoML_training_main(data: pd.DataFrame, save_dir: str):
     """
 
     # === Ensure working directory and save_dir are on the same drive ===
-    drive_letter = os.path.splitdrive(save_dir)[0]
-    os.chdir(drive_letter + "\\")
-
     os.makedirs(save_dir, exist_ok=True)
 
     label_name = data.columns[0]
@@ -274,9 +271,9 @@ def AutoML_training_main(data: pd.DataFrame, save_dir: str):
     return AutoML_comparison_scatter_fig, best_model_name, metrics, model_path
 
 if __name__ == "__main__":
-    file_path = r'best_indices1.xlsx'
+    file_path = r'best_features.xlsx'
     res_df = pd.read_excel(file_path, sheet_name='Sheet1')
-    save_dir = r'D:\Code_Store\Water_content_inversion\model_train\Best_Model'
+    save_dir = r'D:\Code_Store\InversionSoftware\S2_model_training'
     AutoML_comparison_scatter_fig, best_model_name, metrics, model_path = AutoML_training_main(
         res_df, save_dir
     )

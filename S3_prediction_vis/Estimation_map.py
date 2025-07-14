@@ -100,7 +100,7 @@ def load_model(model_path, modeltype):
         model = joblib.load(model_path)
         model_type = 'ML'
     elif model_path.endswith('.pt') and modeltype == 'DL':
-        model = torch.load(model_path)
+        model = torch.load(model_path,weights_only=False)
         model.eval()
         model_type = 'DL'
     elif model_path.endswith('.pkl') and modeltype == 'Auto':
