@@ -3,7 +3,7 @@
 Module Name: Optimal_model_diagram
 
 This script performs:
-- Loading different types of regression models (Keras, Sklearn, TPOT, AutoGluon)
+- Loading different types of regression models (PyTorch, Sklearn, TPOT, AutoGluon)
 - Making unified predictions on training and test datasets
 - Plotting scatter plots of true vs. predicted values
 - Plotting comparison diagrams showing multiple models in one figure
@@ -16,29 +16,29 @@ Main Features:
 """
 
 import os
-os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.model_selection import train_test_split
 import joblib
-from tensorflow.keras.models import load_model
 import seaborn as sns
 from scipy.stats import linregress
-import tensorflow as tf
 from autogluon.tabular import TabularPredictor
 from tpot import TPOTRegressor
+import torch
 import warnings
+from S2_model_training.DL_model import CNNModel
 
 warnings.filterwarnings("ignore")
+
 
 def load_model_from_path(model_path, model_type):
     """
     Load a model object based on its type and file path.
 
     Supported:
-        - Keras models (.keras file)
+        - PyTorch models (.pt file)
         - Sklearn / TPOT models saved via joblib (.joblib file)
         - AutoGluon models (directory path)
 
@@ -49,8 +49,11 @@ def load_model_from_path(model_path, model_type):
     Returns:
         Loaded model object
     """
-    if model_path.endswith(".keras"):
-        return load_model(model_path)
+    if model_path.endswith(".pt"):
+        # Load PyTorch model using torch.load
+        model = torch.load(model_path)
+        model.eval()
+        return model
     elif model_path.endswith(".joblib"):
         return joblib.load(model_path)
     elif model_type == "AutoGluon":
@@ -58,7 +61,7 @@ def load_model_from_path(model_path, model_type):
     elif model_type == "TPOT":
         return joblib.load(model_path)
     else:
-        raise ValueError("Unsupported model file type. Please provide a '.keras' or '.joblib' file.")
+        raise ValueError("Unsupported model file type. Please provide a '.pt' or '.joblib' file.")
 
 
 def reshape_for_dl(X):
@@ -84,7 +87,7 @@ def safe_predict(model, X, model_type=None, feature_names=None, verbose=0):
     Universal prediction interface compatible with various model types.
 
     Supported:
-        - Keras models
+        - PyTorch models
         - AutoGluon models
         - TPOT models
         - Sklearn models
@@ -94,13 +97,21 @@ def safe_predict(model, X, model_type=None, feature_names=None, verbose=0):
         X: Input features (DataFrame, array, or tensor)
         model_type: Model type string
         feature_names: For arrays, AutoGluon requires feature names
-        verbose: Whether to display progress bar (effective for Keras)
+        verbose: Ignored for PyTorch
 
     Returns:
         np.ndarray: Predicted values (1D array)
     """
-    if isinstance(model, (tf.keras.Model, tf.keras.Sequential)):
-        return model.predict(np.array(X), verbose=verbose).flatten()
+    if isinstance(model, torch.nn.Module):
+        # Convert X to tensor
+        X_np = np.array(X) if not isinstance(X, np.ndarray) else X
+        X_tensor = torch.from_numpy(X_np.astype(np.float32))
+        # Handle 3D inputs for CNN, etc.
+        if len(X_tensor.shape) == 3:
+            X_tensor = X_tensor.permute(0, 2, 1)  # e.g. (N, C, L)
+        with torch.no_grad():
+            output = model(X_tensor).cpu().numpy().flatten()
+        return output
     elif isinstance(model, TabularPredictor):
         if not isinstance(X, pd.DataFrame):
             if feature_names is None:
@@ -157,7 +168,6 @@ def plot_comparison(model, model_type, X_train, X_test, Y_train, Y_test,
     ax.scatter(Y_test, y_pred, c='royalblue', edgecolors='k', marker='o', alpha=0.8, label='Test Data')
     ax.scatter(Y_train, x_pred, c='lightcoral', edgecolors='k', marker='^', alpha=0.8, label='Train Data')
 
-    # Automatically set axis limits
     y_all = np.concatenate([Y_train, Y_test, x_pred, y_pred])
     y_min, y_max = y_all.min(), y_all.max()
     margin = (y_max - y_min) * 0.05
@@ -165,10 +175,8 @@ def plot_comparison(model, model_type, X_train, X_test, Y_train, Y_test,
     ax.set_xlim(y_min - margin, y_max + margin)
     ax.set_ylim(y_min - margin, y_max + margin)
 
-    # Plot y = x reference line
     ax.plot([y_min, y_max], [y_min, y_max], color='gray', linestyle='--', linewidth=1.5, label='y = x')
 
-    # Plot fitted regression lines
     slope_test, intercept_test, _, _, _ = linregress(Y_test, y_pred)
     slope_train, intercept_train, _, _, _ = linregress(Y_train, x_pred)
     ax.plot([y_min, y_max], slope_test * np.array([y_min, y_max]) + intercept_test,
@@ -220,7 +228,6 @@ def plot_main(res_df, model_save_dir, model_type):
         matplotlib.figure.Figure:
             The overall plotted figure object
     """
-    # Split into training and test sets
     X = res_df.iloc[:, 1:]
     y = res_df.iloc[:, 0]
     X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -233,7 +240,6 @@ def plot_main(res_df, model_save_dir, model_type):
     axs = axs.flatten()
 
     for i, best_model in enumerate(model_type):
-        # Automatically generate model path
         if best_model in ["AutoGluon", "AutoGluon_v1", "AutoGluon_best"]:
             model_path = os.path.join(model_save_dir, 'AutoGluon')
         elif best_model == "TPOT":
@@ -241,7 +247,7 @@ def plot_main(res_df, model_save_dir, model_type):
         elif best_model in ["SVR", "MLR", "RandomForest", "KNN", "GBDT", "XGBoost", "ELM", "BPNN", "PLSR"]:
             model_path = os.path.join(model_save_dir, f'{best_model}_best_ML_model.joblib')
         elif best_model in ["CNN", "LSTM", "GRU", "BiLSTM", "DNN", "CNN_LSTM", "MLP", "Autoencoder", "GNN (Mock)"]:
-            model_path = os.path.join(model_save_dir, f'{best_model}_best_DL_model.keras')
+            model_path = os.path.join(model_save_dir, f'{best_model}_best_DL_model.pt')
         else:
             print(f"[Skipped] Model type {best_model} is not recognized.")
             continue
@@ -279,5 +285,5 @@ if __name__ == "__main__":
     file_path = r'best_features.xlsx'
     res_df = pd.read_excel(file_path, sheet_name='Sheet1')
     model_save_dir = r'D:\Code_Store\InversionSoftware\S2_model_training\Best_Model'
-    model_type = ['GBDT', 'CNN', 'AutoGluon']
+    model_type = ['RandomForest', 'CNN', 'AutoGluon']
     plot_main(res_df, model_save_dir, model_type)

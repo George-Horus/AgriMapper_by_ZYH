@@ -20,7 +20,7 @@ remote sensing imagery. Core functionality includes:
 Supported model types:
     - Traditional machine learning models (.joblib),
       e.g. SVR, RF, GBDT, XGBoost, KNN, etc.
-    - Deep learning models (.keras),
+    - Deep learning models (.pt),
       e.g. CNN, LSTM, GRU, DNN, AutoEncoder, etc.
     - AutoML models, e.g. AutoGluon or TPOT.
 
@@ -46,7 +46,7 @@ Main functions:
 
 Inputs:
 - Path to remote sensing imagery (GeoTIFF).
-- Path to model file (.joblib, .keras, AutoGluon directory).
+- Path to model file (.joblib, .pt, AutoGluon directory).
 - Choice of model type (ML / DL / Auto).
 - Band list.
 - Vegetation index list.
@@ -58,6 +58,7 @@ Outputs:
 - PIL image object of the histogram.
 - Log file.
 """
+
 from S1_preprocessing import VMID_1
 import joblib
 import rasterio
@@ -66,12 +67,13 @@ np.seterr(divide='ignore', invalid='ignore')
 from PIL import Image
 from tqdm import tqdm
 import pandas as pd
-import tensorflow as tf
+import torch
 from rasterio.windows import Window
 from autogluon.tabular import TabularPredictor
 from tpot import TPOTRegressor
 from S3_prediction_vis import visualize_tif
 import warnings
+from S2_model_training.DL_model import CNNModel
 warnings.filterwarnings("ignore", category=UserWarning)
 
 def load_model(model_path, modeltype):
@@ -81,7 +83,7 @@ def load_model(model_path, modeltype):
     Supported formats include:
     - Traditional models (.joblib): SVR, RF, KNN, MLR, GBDT,
       XGBoost, BPNN, etc.
-    - Deep learning models (.keras): CNN, LSTM, GRU, DNN,
+    - Deep learning models (.pt): CNN, LSTM, GRU, DNN,
       AutoEncoder, etc.
     - AutoGluon models (directory names containing autogluon)
     - TPOT models (directory or filenames containing tpot)
@@ -97,8 +99,9 @@ def load_model(model_path, modeltype):
     if model_path.endswith('.joblib') and modeltype == 'ML':
         model = joblib.load(model_path)
         model_type = 'ML'
-    elif model_path.endswith('.keras') and modeltype == 'DL':
-        model = tf.keras.models.load_model(model_path)
+    elif model_path.endswith('.pt') and modeltype == 'DL':
+        model = torch.load(model_path)
+        model.eval()
         model_type = 'DL'
     elif model_path.endswith('.pkl') and modeltype == 'Auto':
         model = joblib.load(model_path)
@@ -110,6 +113,7 @@ def load_model(model_path, modeltype):
         raise ValueError(f"❌ Unsupported model format: {model_path}")
     print(f"✅ Model loaded successfully: {model_type} type")
     return model, model_type
+
 
 def safe_predict(model, X, model_type=None, feature_names=None, verbose=0):
     """
@@ -127,7 +131,7 @@ def safe_predict(model, X, model_type=None, feature_names=None, verbose=0):
     feature_names : list[str]
         Required if input is an array and the model is AutoGluon.
     verbose : int
-        Verbosity level for Keras prediction.
+        Ignored for PyTorch.
 
     Returns:
     ----------
@@ -135,8 +139,19 @@ def safe_predict(model, X, model_type=None, feature_names=None, verbose=0):
         Flattened 1D prediction array.
     """
 
-    if isinstance(model, (tf.keras.Model, tf.keras.Sequential)):
-        return model.predict(np.array(X), verbose=verbose).flatten()
+    if isinstance(model, torch.nn.Module):
+        X_np = np.array(X) if not isinstance(X, np.ndarray) else X
+        X_tensor = torch.from_numpy(X_np.astype(np.float32))
+
+        # check if input_dim matches expected CNN shape
+        if model.__class__.__name__ == 'CNNModel':
+            if X_tensor.ndim == 2:
+                X_tensor = X_tensor.unsqueeze(1)  # (N, 1, input_dim)
+
+        with torch.no_grad():
+            y_pred = model(X_tensor).cpu().numpy().flatten()
+        return y_pred
+
 
     elif isinstance(model, TabularPredictor):
         if not isinstance(X, pd.DataFrame):
@@ -155,6 +170,7 @@ def safe_predict(model, X, model_type=None, feature_names=None, verbose=0):
             X_input = np.array(X)
         return model.predict(X_input).flatten()
 
+
 def predict_from_tif_tile_based(tif_path, model, model_type, bandlist, index_list, tile_size=512, batch_size=100_000):
     """
     Tile-based prediction function with progress bar for large
@@ -162,23 +178,6 @@ def predict_from_tif_tile_based(tif_path, model, model_type, bandlist, index_lis
 
     This enables processing of high-resolution or large-area images
     while keeping memory usage manageable.
-
-    Parameters:
-    ----------
-    tif_path : str
-        Path to the GeoTIFF image.
-    model : object
-        Loaded model object.
-    model_type : str
-        Type of the model.
-    bandlist : list[str]
-        List of band names matching the order of bands in the TIFF.
-    index_list : list[str]
-        List of vegetation indices to compute.
-    tile_size : int
-        Size of the tiles in pixels.
-    batch_size : int
-        Number of pixels processed in one prediction batch.
 
     Returns:
     ----------
@@ -257,26 +256,8 @@ def predict_from_tif_tile_based(tif_path, model, model_type, bandlist, index_lis
 
     return y_pred_final, meta
 
+
 def save_array_as_tif(array, reference_meta, save_dir, model_type):
-    """
-    Saves a 2D prediction result as a GeoTIFF image.
-
-    Parameters:
-    ----------
-    array : ndarray
-        2D array of prediction values.
-    reference_meta : dict
-        Metadata from a reference image to maintain spatial alignment.
-    save_dir : str
-        Directory to save the output.
-    model_type : str
-        Type of the model (used for filename).
-
-    Returns:
-    ----------
-    full_path : str
-        Full path to the saved GeoTIFF file.
-    """
     os.makedirs(save_dir, exist_ok=True)
     tif_path = os.path.join(save_dir, f'{model_type}_prediction_results.tif')
     meta = reference_meta.copy()
@@ -315,22 +296,12 @@ import os
 import time
 
 def memory_monitor(interval=1, stop_event=None):
-    """
-    Monitors memory usage of the current process and prints it
-    at regular intervals.
-
-    Parameters:
-    ----------
-    interval : int
-        Time interval in seconds between memory checks.
-    stop_event : threading.Event
-        Event used to signal stopping the monitoring loop.
-    """
     process = psutil.Process(os.getpid())
     while not (stop_event and stop_event.is_set()):
         mem = process.memory_info().rss / 1024 / 1024
         print(f"[Real-time Memory Monitor] Current memory usage: {mem:.2f} MB")
         time.sleep(interval)
+
 
 def Estimation_map_main(multi_tif_data_path, model_path, model_selection, bandlist, index_list, save_dir):
     stop_event = threading.Event()
@@ -421,19 +392,27 @@ def Estimation_map_main(multi_tif_data_path, model_path, model_selection, bandli
         stop_event.set()
         monitor_thread.join()
 
+
 if __name__ == "__main__":
 
     multi_tif_data_path = r"D:\Code_Store\InversionSoftware\S3_prediction_vis\UAV_image\20250421ROI.tif"
     model_path = [
-        'D:\Code_Store\InversionSoftware\S3_prediction_vis\s2\RandomForest_best_ML_model.joblib',
-        'D:\Code_Store\InversionSoftware\S3_prediction_vis\s2\CNN_best_DL_model.keras',
-        'D:\Code_Store\InversionSoftware\S3_prediction_vis\s2\AutoGluon'
+        'D:\Code_Store\InversionSoftware\S2_model_training\Best_Model\RandomForest_best_ML_model.joblib',
+        'D:\Code_Store\InversionSoftware\S2_model_training\Best_Model\CNN_best_DL_model.pt',
+        'D:\Code_Store\InversionSoftware\S2_model_training\Best_Model\AutoGluon'
     ]
 
-    model_selection = 'Auto'
+    model_selection = 'DL'
     save_dir = r"D:\Code_Store\InversionSoftware\S3_prediction_vis"
     bandlist = ['green', 'nir', 'red', 'rededge']
 
     index_list = ["RED", "ARI", "CVI", "MCARI1", "MCARI4", "MNLI", "NDGI", "NNIR", "PSRI2", "REDVI", "RI", "VI700"]
 
-    images, pre_tif_path_list = Estimation_map_main(multi_tif_data_path, model_path, model_selection, bandlist, index_list, save_dir)
+    images, pre_tif_path_list = Estimation_map_main(
+        multi_tif_data_path,
+        model_path,
+        model_selection,
+        bandlist,
+        index_list,
+        save_dir
+    )

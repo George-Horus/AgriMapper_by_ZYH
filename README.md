@@ -81,7 +81,6 @@ This project relies on the following Python libraries:
 - rasterio==1.3.9
 - pyproj
 - joblib
-- tensorflow
 - scipy==1.7.3
 - scikit-learn
 - xgboost
