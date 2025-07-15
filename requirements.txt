@@ -1,7 +1,10 @@
-autogluon
-tpot
+autogluon.tabular==1.2
 rasterio==1.3.9
 gradio==5.25.2
-pyproj
-geopandas
-openpyxl
+geopandas==1.1.1
+openpyxl==3.1.2
+tomli==2.0.1
+seaborn==0.13.2
+torch==2.5.1
+numpy==1.26.4
+tpot==1.0.0

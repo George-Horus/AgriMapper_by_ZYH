@@ -72,23 +72,18 @@ The modular design enables users to perform customized analyses tailored to spec
 
 This project relies on the following Python libraries:
 
-- gradio
-- pandas
-- numpy==1.21.6
-- matplotlib
-- seaborn
-- geopandas
+- autogluon.tabular==1.2
 - rasterio==1.3.9
-- pyproj
-- joblib
-- scipy==1.7.3
-- scikit-learn
-- xgboost
-- openpyxl
-- autogluon
-- tpot
+- gradio==5.25.2
+- geopandas==1.1.1
+- openpyxl==3.1.2
+- tomli==2.0.1
+- seaborn==0.13.2
+- torch==2.5.1
+- numpy==1.26.4
+- tpot==1.0.0
 
-**Python 3.10** is recommended.
+**Python 3.12** is recommended.
 
 ---
 
@@ -128,7 +123,7 @@ After running the last command, click the link generated in the terminal to open
 ### 1. Pull the Image from Docker Hub
 
 ```bash
-docker pull georgehorus/cpam9.0:latest
+docker pull georgehorus/cpam:latest
 ```
 
 ### 2. Start the Container
@@ -136,7 +131,7 @@ docker pull georgehorus/cpam9.0:latest
 Use the following command to start the container and specify a local path for saving files:
 
 ```bash
-docker run -it -p 7860:7860 -v <local-folder-path>:/app/output georgehorus/cpam9.0:latest
+docker run -it -p 7860:7860 -v <local-folder-path>:/app/output georgehorus/cpam:latest
 ```
 
 After launching, open your browser and navigate to:
@@ -164,7 +159,7 @@ This is because the output path inside the container is fixed to `/app/output`, 
 If you want to save the output results to the local folder `D:\Code_Store\results`, use the following command:
 
 ```bash
-docker run -it -p 7860:7860 -v D:\Code_Store\results:/app/output georgehorus/cpam9.0:latest
+docker run -it -p 7860:7860 -v D:\Code_Store\results:/app/output georgehorus/cpam:latest
 ```
 
 This ensures that all output files are automatically saved to your specified local directory.
