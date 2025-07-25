@@ -187,7 +187,6 @@ def extract_values_from_tif3(tif_path, df_transformed, window_size=10):
         transform = dataset.transform
 
         all_bands = dataset.read()  # shape: (num_bands, height, width)
-
         height, width = dataset.height, dataset.width
         half_window_size = window_size // 2
 
@@ -206,7 +205,11 @@ def extract_values_from_tif3(tif_path, df_transformed, window_size=10):
             col_end = min(col + half_window_size + 1, width)
             row_end = min(row_idx + half_window_size + 1, height)
 
-            window_means = np.nanmean(all_bands[:, row_start:row_end, col_start:col_end], axis=(1, 2))
+            # Extract the window and replace no-data values with NaN
+            window = all_bands[:, row_start:row_end, col_start:col_end]
+            window[window == dataset.nodata] = np.nan  # Mark no-data values as NaN
+
+            window_means = np.nanmean(window, axis=(1, 2))
 
             return window_means
 
