@@ -1,4 +1,4 @@
-# Crop Phenotype Analysis Modeling Software (CPAM)
+# AgriMapper
 
 *An AutoML-Driven Software Platform for Crop Phenotype Analysis and Prescription Map Generation with Aerial Multispectral Imagery*
 
