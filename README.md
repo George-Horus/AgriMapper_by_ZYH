@@ -1,6 +1,8 @@
 # AgriMapper
 
-*An AutoML-Driven Software Platform for Crop Phenotype Analysis and Prescription Map Generation with Aerial Multispectral Imagery*
+*An AutoML-Driven Software Platform for Crop Phenotype Analysis and Prescription Map Generation with Aerial Multispectral Imagery.*
+
+**The experimental data used in software development has been uploaded to Releases.[avaiable here](https://github.com/George-Horus/AgriMapper_by_ZYH/releases/tag/1.0)**
 
 ---
 
@@ -22,18 +24,18 @@
 
 ## Overview
 
-CPAM was developed entirely in Python. Its front-end interactive interface is built using **Gradio**, offering a modular architecture suitable for various analytical workflows.
+AgriMapper was developed entirely in Python. Its front-end interactive interface is built using **Gradio**, offering a modular architecture suitable for various analytical workflows.
 
 The software integrates a variety of Python libraries, including:
 
 - **SciPy** for data computation
 - **Rasterio** for handling remote sensing imagery
 - **Scikit-learn** for training machine learning models
-- **TensorFlow** for developing deep learning models
+- **Pytorch** for developing deep learning models
 
 ---
 
-CPAM encompasses five core components:
+AgriMapper encompasses five core components:
 
 1. Data preprocessing
 2. Vegetation index calculation
@@ -41,13 +43,13 @@ CPAM encompasses five core components:
 4. Model training
 5. Prescription map generation
 
-This design ensures excellent flexibility and scalability, making CPAM suitable for diverse remote sensing modeling tasks such as agricultural phenotyping monitoring.
+This design ensures excellent flexibility and scalability, making AgriMapper suitable for diverse remote sensing modeling tasks such as agricultural phenotyping monitoring.
 
 ---
 
-![CPAM Workflow Diagram](./images/results.PNG)
+![AgriMapper Workflow Diagram](./images/results.PNG)
 
-*Figure 1. Overall workflow of CPAM.*
+*Figure 1. Overall workflow of AgriMapper.*
 
 ---
 
@@ -63,9 +65,9 @@ The modular design enables users to perform customized analyses tailored to spec
 
 ---
 
-![CPAM User Interface](./images/interface.png)
+![AgriMapper User Interface](./images/interface.png)
 
-*Figure 2. CPAM user interface.*
+*Figure 2. AgriMapper user interface.*
 
 
 ## Installation
@@ -89,20 +91,12 @@ This project relies on the following Python libraries:
 
 ### 🔧 Installation from GitHub
 
-#### ⚙️ Install GDAL
-
-This project involves spatial data processing. It is recommended to use conda to install GDAL to avoid complex dependency issues:
-
-```bash
-conda install -c conda-forge gdal
-```
-
 It's also recommended to create a new virtual environment with conda:
 
 ```bash
 # Clone the repository
-git clone https://github.com/George-Horus/CPAM_v1.0.git
-cd CPAM_v1.0
+git clone https://github.com/George-Horus/AgriMapper_by_ZYH.git
+cd AgriMapper_v1.0
 
 # Create a conda virtual environment
 conda create -n Gradio python=3.10
@@ -140,7 +134,7 @@ After launching, open your browser and navigate to:
 http://localhost:7860/
 ```
 
-This will connect you to the CPAM editor interface.
+This will connect you to the Agrimapper editor interface.
 
 ---
 
@@ -211,9 +205,9 @@ The data preparation workflow is illustrated in **Figure 1**.
 
 *Figure 3. Data preparation workflow.*
 
-### Step 2: Upload Data to CPAM
+### Step 2: Upload Data to Agrimapper
 
-Upload the preprocessed multispectral imagery and the sampling point file to **CPAM** in the specified order.
+Upload the preprocessed multispectral imagery and the sampling point file to **Agrimapper** in the specified order.
 
 Manually enter:
 
@@ -228,19 +222,19 @@ The upload interface is shown in **Figure 2**.
 
 ![Upload Interface](./images/Step2.PNG)
 
-*Figure 4. Data upload interface in CPAM.*
+*Figure 4. Data upload interface in Agrimapper.*
 
-### Step 3: Configure Feature Engineering in CPAM
+### Step 3: Configure Feature Engineering in Agrimapper
 
 Click on the **Feature Engineering** tab and input the spectral bands of the multispectral images in order.
 
-CPAM will automatically generate a set of checkboxes corresponding to the number of uploaded imagery files. Users can select one or more flight datasets to be included in the regression model construction.
+Agrimapper will automatically generate a set of checkboxes corresponding to the number of uploaded imagery files. Users can select one or more flight datasets to be included in the regression model construction.
 
 Once any checkbox is selected, the vegetation index selection parameters are considered set. Click the **Submit Parameters** button to proceed.
 
 ---
 
-After submission, CPAM will automatically:
+After submission, Agrimapper will automatically:
 
 - Extract spectral values at the sampling point locations
 - Calculate **117 vegetation indices** from the built-in vegetation index library
@@ -250,9 +244,9 @@ The interface for this step is shown in **Figure 3**.
 
 ![Feature Engineering Interface](./images/Step3.PNG)
 
-*Figure 5. Feature engineering interface in CPAM.*
+*Figure 5. Feature engineering interface in Agrimapper.*
 
-### Step 4: Model Construction in CPAM
+### Step 4: Model Construction in Agrimapper
 
 After feature selection is completed, the selected vegetation indices and the nitrogen content at sampling points are combined into a modeling dataset, which is saved in the output folder specified by the user.
 
@@ -279,9 +273,9 @@ The modeling interface is shown in **Figure 4**.
 
 ![Model Construction Interface](./images/Step4.PNG)
 
-*Figure 6. Model construction interface in CPAM.*
+*Figure 6. Model construction interface in Agrimapper.*
 
-### Step 5: Perform Nitrogen Prediction with CPAM
+### Step 5: Perform Nitrogen Prediction with Agrimapper
 
 Use the trained model to perform full-field nitrogen content prediction.
 
@@ -291,7 +285,7 @@ Click **Generate a Prediction Map** to start the prediction process.
 
 ---
 
-After clicking the button, CPAM will automatically:
+After clicking the button, Agrimapper will automatically:
 
 - Load the selected model
 - Perform pixel-wise prediction over the entire field
@@ -309,9 +303,9 @@ The prediction interface is shown in **Figure 5**.
 
 ![Prediction Interface](./images/Step5.PNG)
 
-*Figure 7. Prediction result interface in CPAM.*
+*Figure 7. Prediction result interface in Agrimapper.*
 
-### Step 6: Generate Prescription Map in CPAM
+### Step 6: Generate Prescription Map in Agrimapper
 
 Navigate to the **Prescription Map Generation** tab.
 
@@ -345,4 +339,4 @@ The interface for prescription map generation is shown in **Figure 8**.
 
 ![Prescription Map Interface](./images/Step6.PNG)
 
-*Figure 8. Prescription map generation interface in CPAM.*
+*Figure 8. Prescription map generation interface in Agrimapper.*
