@@ -2,7 +2,6 @@
 
 *An AutoML-Driven Software Platform for Crop Phenotype Analysis and Prescription Map Generation with Aerial Multispectral Imagery.*
 
-<<<<<<< HEAD
 **The experimental data used in software development has been uploaded to Releases.[avaiable here](https://github.com/George-Horus/AgriMapper_by_ZYH/releases/tag/1.0)**
 
 ---
