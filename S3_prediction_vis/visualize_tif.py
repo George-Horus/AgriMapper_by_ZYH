@@ -33,6 +33,7 @@ Outputs:
 """
 
 import matplotlib as mpl
+mpl.use("Agg")
 from PIL import Image
 import os
 import rasterio

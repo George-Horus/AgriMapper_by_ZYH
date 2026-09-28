@@ -23,12 +23,12 @@ Main Features:
 
 import os
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.preprocessing import MinMaxScaler
-from S2_model_training import ML_model, AutoML_model, Optimal_model_diagram, DL_model
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -157,6 +157,10 @@ def Training_main(res_df, save_dir):
             - save_path (str):
                 Subdirectory path where all results are saved (Best_Model).
     """
+    # Keep optional legacy training dependencies out of module import time.
+    # This allows the five-fold pipeline to run with only its own dependencies.
+    from S2_model_training import ML_model, AutoML_model, Optimal_model_diagram, DL_model
+
     # Set save directory
     save_path = os.path.join(save_dir, 'Best_Model')
     os.makedirs(save_path, exist_ok=True)
@@ -202,6 +206,87 @@ def Training_main(res_df, save_dir):
     }
 
     return model_performance_df, figures, model_path, save_path
+
+
+def Cross_validation_main(
+    res_df,
+    save_dir,
+    requested_models=("all",),
+    n_splits=5,
+    random_state=42,
+    autogluon_time_limit=600,
+    tpot_generations=10,
+    tpot_population_size=20,
+    tpot_max_time_mins=10,
+    tpot_max_eval_time_mins=2,
+    torch_epochs=300,
+):
+    """Run the S2 five-fold modelling workflow.
+
+    ``res_df`` follows the same contract as :func:`Training_main`: the first
+    column is the target and the remaining columns are the fixed predictors
+    exported by S1.  Pearson filtering and RFE are intentionally completed
+    before this function is called; this function performs model fitting and
+    five-fold evaluation only.  The input workbook, auditable fold outputs,
+    figures, and workbooks are written below ``save_dir/Cross_Validation``.
+    """
+    if not isinstance(res_df, pd.DataFrame) or res_df.empty:
+        raise ValueError("Cross-validation requires a non-empty pandas DataFrame.")
+    if n_splits < 2:
+        raise ValueError("n_splits must be at least 2.")
+    if res_df.shape[1] < 2:
+        raise ValueError("Cross-validation requires one target column and at least one feature column.")
+
+    # S1 returns the target as the first column. Enforce this basic contract
+    # before serializing the table for the CV runner.
+    target_name = str(res_df.columns[0])
+    if not target_name.strip():
+        raise ValueError("The first column of the S1 modelling table must be the target variable.")
+
+    from S2_model_training.cv_pipeline import CVConfig, run_cross_validation
+    from S2_model_training.plot_cv_results import (
+        export_plot_workbooks,
+        plot_model_ranking,
+        plot_scatter_matrix,
+    )
+
+    output_dir = Path(save_dir) / "Cross_Validation"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    input_path = output_dir / "cross_validation_input.xlsx"
+    res_df.to_excel(input_path, index=False)
+
+    model_names = requested_models
+    if isinstance(model_names, str):
+        model_names = model_names.split(",")
+    config = CVConfig(
+        data_path=input_path,
+        output_dir=output_dir,
+        target_column=target_name,
+        n_splits=int(n_splits),
+        random_state=int(random_state),
+        autogluon_time_limit=autogluon_time_limit,
+        tpot_generations=int(tpot_generations),
+        tpot_population_size=int(tpot_population_size),
+        tpot_max_time_mins=int(tpot_max_time_mins),
+        tpot_max_eval_time_mins=int(tpot_max_eval_time_mins),
+        torch_epochs=int(torch_epochs),
+    )
+    results = run_cross_validation(config, model_names)
+
+    figure_dir = output_dir / "figures"
+    figure_dir.mkdir(parents=True, exist_ok=True)
+    scatter_path = plot_scatter_matrix(
+        results["summary"], results["oof_predictions"], figure_dir, columns=3, dpi=300
+    )
+    ranking_path = plot_model_ranking(results["summary"], figure_dir, dpi=300)
+    export_plot_workbooks(
+        results["summary"], results["fold_metrics"], results["oof_predictions"], output_dir
+    )
+    figures = {
+        "CV_scatter": scatter_path,
+        "CV_ranking": ranking_path,
+    }
+    return results["summary"], figures, [str(output_dir)], str(output_dir)
 
 
 if __name__ == "__main__":

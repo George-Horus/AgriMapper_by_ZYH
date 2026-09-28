@@ -41,6 +41,8 @@ import os
 from S1_preprocessing import VMID_1
 import rasterio
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from PIL import Image
 from io import BytesIO

@@ -210,7 +210,9 @@ def data_process_main(tif_path_list, file_path_list, band_match, target_value, s
     """
     Main function for the data preprocessing module. Handles
     reading data, extracting sampling point features, and
-    performing feature engineering.
+    performing feature engineering. Pearson filtering and RFE are
+    completed once here; the returned ``best_features_df`` is the fixed
+    modelling table consumed by S2.
     """
 
     save_path = os.path.join(save_dir, 'Feature_Selection')

@@ -85,14 +85,6 @@ def excel_to_shapefile(excel_path, shp_output_path, lon_col="lon", lat_col="lat"
     print(f"✅ Shapefile successfully saved to: {shp_output_path}")
 
 
-excel_to_shapefile(
-    excel_path=r"D:\Zyh\0317.xlsx",
-    shp_output_path=r"D:\Zyh\0317_points.shp",
-    lon_col="lon",
-    lat_col="lat",
-    crs_epsg=4326  # Use 4326 for latitude/longitude coordinates
-)
-
 if __name__ == "__main__":
     # Example: Convert Excel to Shapefile
     excel_to_shapefile(

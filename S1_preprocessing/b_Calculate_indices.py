@@ -138,7 +138,7 @@ def concat_final_dataframe(df, file_path, target_value):
 
     return final_indice_df
 
-def indeces_main(tif_path, file_path, band_match, target_value, windowsize=10):
+def indeces_main(tif_path, file_path, band_match, target_value, windowsize=40):
     """
     Main function for calculating vegetation indices for sampling points.
 
@@ -165,12 +165,12 @@ def indeces_main(tif_path, file_path, band_match, target_value, windowsize=10):
 if __name__ == "__main__":
     # Example usage
 
-    tif_path = r"20250421_wheat.tif"
-    file_path = r"20250421_sample.xlsx"
-    band_match = ["BLUE", "GREEN", "RED", "RedEdge", "NIR"]
+    tif_path = r"20250224_MS_masked_ROI.tif"
+    file_path = r"0224采样点坐标.xlsx"
+    band_match = ["GREEN", "RED", "RedEdge", "NIR"]
     target_value = "N"
 
     final_df = indeces_main(tif_path, file_path, band_match, target_value)
-    final_df.to_excel("20250421_indices.xlsx", index=False)
+    final_df.to_excel("20250224_indices.xlsx", index=False)
 
     print("✅ Index calculation and data merging completed. Results have been saved.")

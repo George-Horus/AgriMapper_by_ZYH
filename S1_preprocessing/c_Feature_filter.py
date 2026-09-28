@@ -32,8 +32,10 @@ import os
 import numpy as np
 from S1_preprocessing import b_Calculate_indices
 import pandas as pd
-import seaborn as sns
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.feature_selection import RFE
 from sklearn.model_selection import train_test_split

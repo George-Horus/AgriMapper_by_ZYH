@@ -257,9 +257,11 @@ def predict_from_tif_tile_based(tif_path, model, model_type, bandlist, index_lis
     return y_pred_final, meta
 
 
-def save_array_as_tif(array, reference_meta, save_dir, model_type):
+def save_array_as_tif(array, reference_meta, save_dir, model_type, source_name=None):
     os.makedirs(save_dir, exist_ok=True)
-    tif_path = os.path.join(save_dir, f'{model_type}_prediction_results.tif')
+    # Include the source image stem so a batch of images cannot overwrite one another.
+    source_prefix = f'{source_name}_' if source_name else ''
+    tif_path = os.path.join(save_dir, f'{source_prefix}{model_type}_prediction_results.tif')
     meta = reference_meta.copy()
     meta.update({
         'count': 1,
@@ -359,7 +361,8 @@ def Estimation_map_main(multi_tif_data_path, model_path, model_selection, bandli
             log_and_print(f"🧠 Memory usage after prediction: {mem:.2f} MB")
 
             start = time.time()
-            pre_tif_path = save_array_as_tif(y_pred, meta, save_path, model_type)
+            source_name = os.path.splitext(os.path.basename(tif_path))[0]
+            pre_tif_path = save_array_as_tif(y_pred, meta, save_path, model_type, source_name)
             print_time(start, "Image saving")
             mem = psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024
             log_and_print(f"🧠 Memory usage after saving prediction image: {mem:.2f} MB")

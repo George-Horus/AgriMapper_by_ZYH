@@ -187,6 +187,7 @@ def extract_values_from_tif3(tif_path, df_transformed, window_size=10):
         transform = dataset.transform
 
         all_bands = dataset.read()  # shape: (num_bands, height, width)
+
         height, width = dataset.height, dataset.width
         half_window_size = window_size // 2
 
@@ -205,11 +206,7 @@ def extract_values_from_tif3(tif_path, df_transformed, window_size=10):
             col_end = min(col + half_window_size + 1, width)
             row_end = min(row_idx + half_window_size + 1, height)
 
-            # Extract the window and replace no-data values with NaN
-            window = all_bands[:, row_start:row_end, col_start:col_end]
-            window[window == dataset.nodata] = np.nan  # Mark no-data values as NaN
-
-            window_means = np.nanmean(window, axis=(1, 2))
+            window_means = np.nanmean(all_bands[:, row_start:row_end, col_start:col_end], axis=(1, 2))
 
             return window_means
 
@@ -318,9 +315,9 @@ def Extract_band_value_main(tif_path, file_path, windowsize=10):
 if __name__ == "__main__":
 
     # Example: extract mean values from a window around sample points in a multi-band image
-    tif_path = "testdata/20240525comp.tif"       # Path to the TIFF image
-    file_path = "testdata/20240525xy+N.xlsx"     # File containing WGS84 latitude/longitude
-    output_path = "D:/your_folder/extracted_values_output.xlsx"
+    tif_path = r"D:\Zyh\科研项目\2024-2025氮含量反演\Nitrogen_Content_Prediction\1_Extract_points_and_calculate_windowsize\0224数据预测生成\20250224_MS_masked_ROI.tif"       # Path to the TIFF image
+    file_path = r"D:\Zyh\科研项目\2024-2025氮含量反演\Nitrogen_Content_Prediction\1_Extract_points_and_calculate_windowsize\0224数据预测生成\0224采样点坐标.xlsx"     # File containing WGS84 latitude/longitude
+    output_path = r"D:\Zyh\科研项目\2024-2025氮含量反演\Nitrogen_Content_Prediction\1_Extract_points_and_calculate_windowsize\0224数据预测生成\0224光谱波段提取.xlsx"
 
     # 1. Coordinate transformation
     df_transformed = convert_coordinates_to_tif_crs(tif_path, file_path)
@@ -328,7 +325,7 @@ if __name__ == "__main__":
     print(df_transformed.head())
 
     # 2. Extract mean values from a region in the multi-band image
-    df_result = extract_values_from_tif3(tif_path, df_transformed, window_size=10)
+    df_result = extract_values_from_tif3(tif_path, df_transformed, window_size=40)
     df_result.to_excel(output_path, index=False)
 
     print("✅ Pixel value extraction completed and saved to:", output_path)
