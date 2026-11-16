@@ -213,6 +213,173 @@ body {
   line-height: 1.7 !important;
 }
 
+#dataset-picker fieldset,
+.choice-state fieldset {
+  display: grid;
+  gap: 10px;
+  border: 0;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+#dataset-picker fieldset > div,
+.choice-state fieldset > div {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 8px;
+}
+
+#dataset-picker fieldset label,
+.choice-state fieldset label {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 2px solid #c4ced5;
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+}
+
+#dataset-picker fieldset label:hover,
+.choice-state fieldset label:hover {
+  border-color: #637f8f;
+  background: #f4f7f8;
+}
+
+#dataset-picker fieldset label:has(input:checked),
+.choice-state fieldset label:has(input:checked) {
+  border-color: #176b4b;
+  background: #dff2e9;
+  box-shadow: inset 4px 0 0 #176b4b;
+}
+
+#dataset-picker fieldset label::after,
+.choice-state fieldset label::after {
+  content: "Not selected";
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #edf0f2;
+  color: #4d5960;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+#dataset-picker fieldset label:has(input:checked)::after,
+.choice-state fieldset label:has(input:checked)::after {
+  content: "Selected";
+  background: #176b4b;
+  color: #ffffff;
+}
+
+#dataset-picker fieldset label:has(input:checked) span,
+.choice-state fieldset label:has(input:checked) span {
+  color: #123d2d;
+  font-weight: 800;
+}
+
+#dataset-picker input[type="checkbox"],
+.choice-state input[type="checkbox"],
+.choice-state input[type="radio"] {
+  appearance: none;
+  display: grid !important;
+  flex: 0 0 20px;
+  place-content: center;
+  width: 20px !important;
+  min-width: 20px;
+  height: 20px !important;
+  min-height: 20px !important;
+  margin: 0;
+  padding: 0 !important;
+  border: 2px solid #83939d;
+  border-radius: 4px;
+  background: #ffffff !important;
+  cursor: pointer;
+}
+
+#dataset-picker input[type="checkbox"],
+.choice-state input[type="checkbox"] {
+  border-radius: 4px;
+}
+
+.choice-state input[type="radio"] {
+  border-radius: 50%;
+}
+
+#dataset-picker input[type="checkbox"]::after,
+.choice-state input[type="checkbox"]::after {
+  content: "";
+  width: 5px;
+  height: 10px;
+  border: solid #ffffff;
+  border-width: 0 2.5px 2.5px 0;
+  opacity: 0;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+
+#dataset-picker input[type="checkbox"]:checked,
+.choice-state input[type="checkbox"]:checked,
+.choice-state input[type="radio"]:checked {
+  border-color: #176b4b;
+  background: #176b4b !important;
+}
+
+#dataset-picker input[type="checkbox"]:checked::after,
+.choice-state input[type="checkbox"]:checked::after {
+  opacity: 1;
+}
+
+.choice-state input[type="radio"]::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  opacity: 0;
+}
+
+.choice-state input[type="radio"]:checked::after {
+  opacity: 1;
+}
+
+#dataset-picker fieldset label span,
+.choice-state fieldset label span {
+  line-height: 1.25;
+}
+
+#dataset-picker input[type="checkbox"]:focus-visible,
+.choice-state input[type="checkbox"]:focus-visible,
+.choice-state input[type="radio"]:focus-visible {
+  outline: 3px solid rgba(23, 107, 75, 0.32);
+  outline-offset: 2px;
+}
+
+.gradio-container [role="option"][aria-selected="true"] {
+  background: #dff2e9 !important;
+  box-shadow: inset 4px 0 0 #176b4b;
+  color: #123d2d !important;
+  font-weight: 800 !important;
+}
+
+.gradio-container [role="option"][aria-selected="true"]::after {
+  content: "Selected";
+  float: right;
+  margin-left: 12px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #176b4b;
+  color: #ffffff;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
 .gradio-container button {
   font-size: 17px !important;
   font-weight: 800 !important;
@@ -360,7 +527,7 @@ def generate_checkbox(tif_input):
     if not tif_list:
         return gr.update(choices=[], value=[], visible=False, interactive=False)
 
-    dataset_names = [f"dataset_{index + 1}" for index in range(len(tif_list))]
+    dataset_names = [f"Dataset {index + 1}" for index in range(len(tif_list))]
     return gr.update(
         choices=dataset_names,
         value=dataset_names,
@@ -745,6 +912,8 @@ def create_feature_engineering_tab():
                     dataset_checkbox = gr.CheckboxGroup(
                         label="Datasets included in feature filtering",
                         visible=False,
+                        elem_id="dataset-picker",
+                        elem_classes="choice-state",
                     )
                     submit_btn = gr.Button("Run feature filtering and export results", variant="primary")
 
@@ -844,6 +1013,7 @@ def create_model_training_tab():
                         ],
                         label="Modeling data source",
                         value="file_upload",
+                        elem_classes="choice-state",
                     )
                     validation_mode = gr.Radio(
                         choices=[
@@ -852,6 +1022,7 @@ def create_model_training_tab():
                         ],
                         label="Validation workflow",
                         value="standard",
+                        elem_classes="choice-state",
                     )
                     cv_model_group = gr.Dropdown(
                         choices=["all", "ml", "dl", "automl"],
@@ -941,6 +1112,7 @@ def create_estimation_tab():
                         ],
                         label="Prediction model selection",
                         value="Auto",
+                        elem_classes="choice-state",
                     )
                     multi_tif_path = gr.File(
                         label="Upload TIF files for prediction",
