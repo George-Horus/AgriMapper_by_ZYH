@@ -4,6 +4,8 @@ An interactive Python and Gradio platform for crop phenotyping, nitrogen estimat
 
 Experimental data used during software development is available in the [GitHub Releases](https://github.com/George-Horus/AgriMapper_by_ZYH/releases/tag/1.0).
 
+A related research article has been accepted for publication: [https://doi.org/10.1016/j.ecoinf.2026.104128](https://doi.org/10.1016/j.ecoinf.2026.104128).
+
 ## Features
 
 - **End-to-end workflow**: upload imagery and field observations, extract spectral features, train models, generate prediction maps, and create grid-based prescription maps.
